@@ -46,6 +46,7 @@ public class Ebay {
 		}
 	}
 
+	// Constructor class
 	public Ebay() {
 		timeToQuit = false;
 		adminLogin = false;
