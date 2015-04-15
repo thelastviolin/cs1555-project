@@ -77,9 +77,14 @@ end;
 /
 
 -- tri_updateHighBid trigger
+-- ERROR at line 1:
+-- ORA-04082: NEW or OLD references not allowed in table level triggers
+-- SHOULD BE FIXED by adding for each row, making this a row-level trigger
+
 create or replace trigger tri_updateHighBid
 after insert
 on Bidlog
+for each row
 begin
 update Product
 set Product.amount = :new.amount
@@ -100,13 +105,23 @@ end;
 /
 
 -- Product_Count function: counts the number of products sold in the past x for specific category c
+-- Errors for FUNCTION PRODUCT_COUNT:
+
+-- LINE/COL ERROR
+-- -------- -----------------------------------------------------------------
+-- 4/2	 PL/SQL: SQL Statement ignored
+-- 8/25	 PL/SQL: ORA-00933: SQL command not properly ended
+
+-- Error fixed by changing from (subquery) as a to from (subquery) a
+
 create or replace function Product_Count(cat in varchar2, month in integer) return integer is 
 	num_products integer;
 begin
-	select count(auction_id) into num_products from (
+	select count(Product.auction_id) into num_products
+	from (
 		select auction_id
 		from BelongsTo
-		where cat = category) as a inner join Product on a.auction_id = Product.auction_id
+		where cat = category) a inner join Product on a.auction_id = Product.auction_id
 	where Product.status = 'sold' and Product.sell_date <= add_months(sysdate, -month);
 	return(num_products);
 end;
@@ -135,8 +150,8 @@ end;
 /
 
 -- top k most active bidders in x months, currently replaced k with 2 (if k = 1) and x with 1 (during the last 1 month)
-select bidder, Bid_Count(bidder, 1)
-from Bidlog
-where rownum < 2
-group by bidder
-order by Bid_Count(bidder, 1) desc;
+-- select bidder, Bid_Count(bidder, 1)
+-- from Bidlog
+-- where rownum < 2
+-- group by bidder
+-- order by Bid_Count(bidder, 1) desc;
