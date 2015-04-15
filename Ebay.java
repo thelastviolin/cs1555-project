@@ -13,8 +13,8 @@ public class Ebay {
 	public static void main(String[] args) {
 		boolean timeToQuit;
 		String username, password;
-		username = "username"; //This is your username in oracle
-		password = "password"; //This is your password in oracle
+		username = "kdi8"; //This is your username in oracle
+		password = "3722875"; //This is your password in oracle
 
 		try {
 			// Register the oracle driver.  
@@ -29,20 +29,15 @@ public class Ebay {
 			Ebay auctionHouse = new Ebay();
 
 			String login = auctionHouse.handleLogin();
-			while (!timeToQuit) {
+			while (!auctionHouse.timeToQuit) {
 
 			}
 			System.out.println("\nGoodbye!");
+
+			connection.close();
 		}
 		catch(Exception Ex)  {
 			System.out.println("Error connecting to database.  Machine Error: " + Ex.toString());
-		}
-		finally {
-			/*
-			 * NOTE: the connection should be created once and used through out the whole project;
-			 * Is very expensive to open a connection therefore you should not close it after every operation on database
-			 */
-			connection.close();
 		}
 	}
 
@@ -56,10 +51,10 @@ public class Ebay {
 	public String handleLogin() {
 		int option;
 		boolean exitLoop, isAdmin;
-		String login;
+		String login = "";
 		Scanner scan = new Scanner(System.in);
-
-		exitLoop = true;
+		isAdmin = false;
+		exitLoop = false;
 		System.out.print("Welcome to the Auction House!\n");
 		while (!exitLoop) {
 			System.out.print("1. Login\n" + "2. Exit\n\n" + "Please select an option (1-2): ");
@@ -102,9 +97,6 @@ public class Ebay {
 				}
 				catch (SQLException e) {
 					System.out.println("Error running queries. Machine Error: " + e.toString());
-				}
-				catch (ParseException e) {
-					System.out.println("Error parsing data. Machine error: " + e.toString());
 				}
 				finally {
 					try {
