@@ -30,7 +30,8 @@ public class Ebay {
 
 			String login = auctionHouse.handleLogin();
 			while (!auctionHouse.timeToQuit) {
-				
+				auctionHouse.topKCategoriesRoot(0, 2);
+				auctionHouse.timeToQuit = true;
 			}
 			System.out.println("\nGoodbye!");
 
@@ -113,6 +114,7 @@ public class Ebay {
 				exitLoop = true;
 				login = "";
 			}
+			
 			else {
 				System.out.println("Please enter a legal option.");
 			}
@@ -121,32 +123,101 @@ public class Ebay {
 		return login;
 	}
 	
+	/*
+	
+		ADMINISTRATOR'S FUNCTIONS
+	
+	*/
+	
+	// New Customer Registration
+	public void registerCustomer(String loginName, String pword, String name, String addr, String email, int newAdmin){
+		
+		try{
+			
+			Statement statement1 = connection.createStatement();
+			Statement statement2 = connection.createStatement();
+			String checkExistingCust = "SELECT login FROM Customer";
+			String checkExistingAdmin = "SELECT login FROM Administrator";
+			ResultSet currentCust = statement1.executeQuery(checkExistingCust);
+			ResultSet currentAdmin = statement2.executeQuery(checkExistingAdmin);
+			
+			boolean noMatch = true;
+			// since we always have an admin entry, make sure this login name doesn't exist in the admin table
+			while(currentAdmin.next()){
+				if(currentAdmin.getString(1).equals(loginName)){
+					noMatch = false;
+					break;
+				}
+			}
+			
+			// if it's not in admin table, make sure it's not in the customer table either
+			if(noMatch == true){
+				while(currentCust.next()){
+					if(currentCust.getString(1).equals(loginName)){
+						noMatch = false;
+						break;
+					}
+				}
+			}
+			
+			// if we can confirm login name is unique, insert new user into the appropriate table
+			if(noMatch == true){
+				String insertNewUserQuery = "";
+				
+				if(newAdmin == 1){
+					insertNewUserQuery = "insert into Administrator values(?,?,?,?,?)";
+				}
+				else{
+					insertNewUserQuery = "insert into Customer values(?,?,?,?,?)";
+				}
+				
+				PreparedStatement insertNewUser = connection.prepareStatement(insertNewUserQuery);
+				insertNewUser.setString(1, loginName);
+				insertNewUser.setString(2, pword);
+				insertNewUser.setString(3, name);
+				insertNewUser.setString(4, addr);
+				insertNewUser.setString(5, email);
+				insertNewUser.executeUpdate();
+				System.out.println("New user has been added");
+			}
+			else{
+				System.out.println("Your login name has been taken, please register with a new login name");
+			}
+			
+		}
+		catch (SQLException e) {
+			System.out.println("Error running queries. Machine Error: " + e.toString());
+		}
+		
+	}
+	
+	// Update System Time
 	public void updateSysDate(String newDate){
 		
 		try{
 			
-			java.text.SimpleDateFormat df = new java.text.SimpleDateFormat("DD-MON-YYYY/HH:MI:SSAM");
+			java.text.SimpleDateFormat df = new java.text.SimpleDateFormat("dd-MMM-yyyy/hh:mm:ssaa");
 			java.sql.Date new_date = new java.sql.Date (df.parse(newDate).getTime());
 			
 			Statement statement = connection.createStatement();
 			String compareSysDateQuery = "SELECT c_date FROM ourSysDate";
 			ResultSet result = statement.executeQuery(compareSysDateQuery);
-			int updateResult = 1;
 			
 			while(result.next()){
 				
-				System.out.println(result.getDate(1));
-				// if(result.getDate(1).getTime() == new_date){
-				// 	System.out.println("New time is the same as old time, you're crazy");
-				// }
-				// else if(result.getDate(1).getTime() > new_date){
-				// 	System.out.println("System Date cannot be set back into the past.");
-				// }
-				// else{
-				// 	System.out.println("System time is smaller than new time, update system time");
-				// 	String updateSysDateQuery = "update ourSysDate set c_date = " + new_date;
-				// 	updateResult = statement.executeUpdate(updateSysDateQuery);
-				// }
+				if(result.getDate(1).compareTo(new_date) == 0){
+					System.out.println("New time is the same as old time, no update required");
+				}
+				else if(result.getDate(1).compareTo(new_date) > 0){
+					System.out.println("System Date cannot be set back into the past.");
+				}
+				else{
+					System.out.println("System time is smaller than new time, update system time");
+					String updateSysDateQuery = "update ourSysDate set c_date = to_date(?,\'DD-MON-YYYY/HH:MI:SSAM\')";
+					PreparedStatement updateSDate = connection.prepareStatement(updateSysDateQuery);
+					updateSDate.setString(1, newDate);
+					updateSDate.executeUpdate();
+				}
 				
 			}
 			
@@ -156,6 +227,205 @@ public class Ebay {
 		}
 		catch (ParseException e) {
 			System.out.println("Error parsing data. Machine error: " + e.toString());
+		}
+		
+	}
+	
+	// Product Statistics for all product
+	// Report should contain product name, its status, current highest bid amount and corresponding bidder's login name if not sold, highest bid amount and buyer's login name if it was sold
+	public void productStat(){
+		
+		try{
+			
+			Statement notSold = connection.createStatement();
+			String allProductQuery = "SELECT auction_id, name, status, amount, buyer FROM Product";
+			ResultSet allProductInfo = notSold.executeQuery(allProductQuery);
+			boolean recordExists = false;
+			
+			while(allProductInfo.next()){
+				recordExists = true;
+				System.out.print("name: " + allProductInfo.getString(2) + "\tstatus: " + allProductInfo.getString(3));
+				
+				// if the product haven't been sold yet, search for the corresponding highest bidder
+				if(!allProductInfo.getString(3).equals("sold")){
+					int a_id = allProductInfo.getInt(1);
+					Statement soldAuction = connection.createStatement();
+					String soldProductQuery = "SELECT s.bidder, s.amount FROM (SELECT auction_id, bidder, amount FROM Bidlog WHERE auction_id = " + a_id + " ORDER BY amount desc) s WHERE rownum = 1";
+					ResultSet soldProductInfo = soldAuction.executeQuery(soldProductQuery);
+					
+					while(soldProductInfo.next()){
+						System.out.print("\thighest bidder: " + soldProductInfo.getString(1) + "\tamount: " + soldProductInfo.getInt(2));
+					}
+					System.out.println();
+				}
+				
+				// if product is sold, display its buyer and the highest amount
+				if(allProductInfo.getString(3).equals("sold")){
+					System.out.println("\tamount: " + allProductInfo.getInt(4) + "\tbuyer: " + allProductInfo.getString(5));
+				}
+				
+			}
+			
+			if(recordExists == false){
+				System.out.println("No records of any product statistics, you have no products yet!");
+			}
+			
+		}
+		catch (SQLException e) {
+			System.out.println("Error running queries. Machine Error: " + e.toString());
+		}
+		
+	}
+	
+	// Product Statistics for a specific Customer
+	public void productStat(String loginName){
+		
+		try{
+			
+			Statement notSold = connection.createStatement();
+			String allProductQuery = "SELECT auction_id, name, status, amount, buyer FROM Product WHERE seller = \'" + loginName + "\'";
+			ResultSet allProductInfo = notSold.executeQuery(allProductQuery);
+			boolean recordExists = false;
+			
+			while(allProductInfo.next()){
+				recordExists = true;
+				System.out.print("name: " + allProductInfo.getString(2) + "\tstatus: " + allProductInfo.getString(3));
+				
+				// if the product haven't been sold yet, search for the corresponding highest bidder
+				if(!allProductInfo.getString(3).equals("sold")){
+					int a_id = allProductInfo.getInt(1);
+					Statement soldAuction = connection.createStatement();
+					String soldProductQuery = "SELECT s.bidder, s.amount FROM (SELECT auction_id, bidder, amount FROM Bidlog WHERE auction_id = " + a_id + " ORDER BY amount desc) s WHERE rownum = 1";
+					ResultSet soldProductInfo = soldAuction.executeQuery(soldProductQuery);
+					
+					while(soldProductInfo.next()){
+						System.out.print("\thighest bidder: " + soldProductInfo.getString(1) + "\tamount: " + soldProductInfo.getInt(2));
+					}
+					System.out.println();
+				}
+				
+				// if product is sold, display its buyer and the highest amount
+				if(allProductInfo.getString(3).equals("sold")){
+					System.out.println("\tamount: " + allProductInfo.getInt(4) + "\tbuyer: " + allProductInfo.getString(5));
+				}
+				
+			}
+			
+			if(recordExists == false){
+				System.out.println("The user you selected haven't put up anything in the auction yet or does not exist.");
+			}
+			
+		}
+		catch (SQLException e) {
+			System.out.println("Error running queries. Machine Error: " + e.toString());
+		}
+		
+	}
+	
+	// top-k categories in terms of highest count of products sold, only counting subcategories
+	// not complete yet
+	public void topKCategoriesLeaf(int months, int k){
+		
+		try{
+			
+			Statement allCat = connection.createStatement();
+			String allCatQuery = "SELECT distinct(name), parent_category, Product_Count(name, " + months + ") FROM Category WHERE parent_category IS NOT NULL AND Product_Count(name, " + months + ") > 0 AND rownum <= " + k + " ORDER BY Product_Count(name, " + months + ") desc";
+			ResultSet allCatInfo = allCat.executeQuery(allCatQuery);
+			boolean hasData = false;
+			
+			while(allCatInfo.next()){
+				hasData = true;
+				System.out.println("category name: " + allCatInfo.getString(1) + "\tnumber sold: " + allCatInfo.getInt(3));
+			}
+			
+			if(hasData == false){
+				System.out.println("No products sold in the last " + months + " month(s) falls in subcategories only");
+			}
+			
+		}
+		catch (SQLException e) {
+			System.out.println("Error running queries. Machine Error: " + e.toString());
+		}
+		
+	}
+	
+	// top-k categories in terms of highest count of products sold, only counting root categories
+	// not complete yet
+	public void topKCategoriesRoot(int months, int k){
+		
+		try{
+			
+			Statement allCat = connection.createStatement();
+			String allCatQuery = "SELECT distinct(name), parent_category, Product_Count(name, " + months + ") FROM Category WHERE parent_category IS NULL AND Product_Count(name, " + months + ") > 0 AND rownum <= " + k + " ORDER BY Product_Count(name, " + months + ") desc";
+			ResultSet allCatInfo = allCat.executeQuery(allCatQuery);
+			boolean hasData = false;
+			
+			while(allCatInfo.next()){
+				hasData = true;
+				System.out.println("category name: " + allCatInfo.getString(1) + "\tnumber sold: " + allCatInfo.getInt(3));
+			}
+			
+			if(hasData == false){
+				System.out.println("No products sold in the last " + months + " month(s) falls in root categories only");
+			}
+			
+		}
+		catch (SQLException e) {
+			System.out.println("Error running queries. Machine Error: " + e.toString());
+		}
+		
+	}
+	
+	// top-k most active bidder in past months
+	public void topKBidder(int months, int k){
+		
+		try{
+			
+			Statement topBidders = connection.createStatement();
+			// String allCatQuery = "SELECT a.name, count(a.status = 'sold') as NumSold FROM (SELECT Category.name, Category.parent_category, BelongsTo.auction_id, Product.status FROM Category inner join BelongsTo on Category.name = BelongsTo.category inner join Product on BelongsTo.auction_id = Product.auction_id WHERE parent_category IS NOT NULL AND Product.status = 'sold' ORDER BY Category.name) a GROUP BY a.name";
+			String bidderQuery = "SELECT bidder, Bid_Count(bidder, " + months + ") FROM Bidlog WHERE rownum <= " + k + " GROUP BY bidder ORDER BY Bid_Count(bidder, " + months +") desc";
+			ResultSet bidderInfo = topBidders.executeQuery(bidderQuery);
+			boolean hasData = false;
+			
+			while(bidderInfo.next()){
+				hasData = true;
+				System.out.println("Bidder: " + bidderInfo.getString(1) + "\tNumber of bids: " + bidderInfo.getInt(2));
+			}
+			
+			if(hasData == false){
+				System.out.println("No data in the last " + months + " month(s) on the most active bidder");
+			}
+			
+		}
+		catch (SQLException e) {
+			System.out.println("Error running queries. Machine Error: " + e.toString());
+		}
+		
+	}
+	
+	// top-k most active buyer in past months
+	public void topKBuyer(int months, int k){
+		
+		try{
+			
+			Statement topBuyers = connection.createStatement();
+			// String allCatQuery = "SELECT a.name, count(a.status = 'sold') as NumSold FROM (SELECT Category.name, Category.parent_category, BelongsTo.auction_id, Product.status FROM Category inner join BelongsTo on Category.name = BelongsTo.category inner join Product on BelongsTo.auction_id = Product.auction_id WHERE parent_category IS NOT NULL AND Product.status = 'sold' ORDER BY Category.name) a GROUP BY a.name";
+			String buyerQuery = "SELECT buyer, Buying_Amount(buyer, " + months + ") FROM Product WHERE rownum <= " + k + " GROUP BY buyer ORDER BY Buying_Amount(buyer, " + months +") desc";
+			ResultSet buyerInfo = topBuyers.executeQuery(buyerQuery);
+			boolean hasData = false;
+			
+			while(buyerInfo.next()){
+				hasData = true;
+				System.out.println("Buyer: " + buyerInfo.getString(1) + "\tPurchases in dollars: " + buyerInfo.getInt(2));
+			}
+			
+			if(hasData == false){
+				System.out.println("No data in the last " + months + " month(s) on the most active buyer");
+			}
+			
+		}
+		catch (SQLException e) {
+			System.out.println("Error running queries. Machine Error: " + e.toString());
 		}
 		
 	}
