@@ -181,11 +181,3 @@ begin
 
 end;
 /
-
-
--- top k most active bidders in x months, currently replaced k with 2 (if k = 1) and x with 1 (during the last 1 month)
--- select bidder, Bid_Count(bidder, 1)
--- from Bidlog
--- where rownum < 2
--- group by bidder
--- order by Bid_Count(bidder, 1) desc;
