@@ -149,9 +149,35 @@ begin
 end;
 /
 
--- top k most active bidders in x months, currently replaced k with 2 (if k = 1) and x with 1 (during the last 1 month)
--- select bidder, Bid_Count(bidder, 1)
--- from Bidlog
--- where rownum < 2
--- group by bidder
--- order by Bid_Count(bidder, 1) desc;
+-- Put_Product procedure: puts a new product into the database
+create or replace procedure Put_Product(productName in varchar2, productDescription in varchar2, user in varchar2, numDays in int, minPrice in int, auc_id out int)
+
+is
+	startdate date;
+	cursor c1 is
+	select c_date
+	from ourSysDATE;
+
+	newAuctionId int;
+	cursor c2 is
+	select max(auction_id)
+	from Product;
+
+begin
+	open c1;
+	fetch c1 into startdate;
+
+	open c2;
+	fetch c2 into newAuctionId;
+	auc_id := newAuctionId+1;
+
+	insert into Product(auction_id,name,description,seller,start_date,min_price,number_of_days,status,amount)
+		values(newAuctionId+1,productName,productDescription,user,startdate,minPrice,numDays,'underauction',minPrice);
+
+	commit;
+
+	close c1;
+	close c2;
+
+end;
+/
