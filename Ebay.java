@@ -31,7 +31,6 @@ public class Ebay {
 			String login = auctionHouse.handleLogin();
 			while (!auctionHouse.timeToQuit) {
 				
-				auctionHouse.timeToQuit = true;
 			}
 			System.out.println("\nGoodbye!");
 
@@ -67,47 +66,48 @@ public class Ebay {
 				System.out.print("Password: ");
 				password = scan.next();
 
-				PreparedStatement getAdmin = null;
-				PreparedStatement getCustomer = null;
-
 				try {
-					ResultSet rs;
+					
+					Statement getAdmin = connection.createStatement();
+					Statement getCustomer = connection.createStatement();
+					// ResultSet rs;
 					isAdmin = false;
-					String queryAdmin = "select count(*) from administrator where login = ? and password = ?";
-					String queryCustomer = "select count(*) from customer where login = ? and password = ?";
-					getAdmin = connection.prepareStatement(queryAdmin);
-					getCustomer = connection.prepareStatement(queryCustomer);
-					getAdmin.setString(1, username);
-					getAdmin.setString(2, password);
-					getCustomer.setString(1, username);
-					getCustomer.setString(2, password);
-
-					int a = getAdmin.executeUpdate();
-					if (a > 0) {
+					String queryAdmin = "select * from administrator where login = \'" + username + "\' and password = \'" + password + "\'";
+					String queryCustomer = "select * from customer where login = \'" + username + "\' and password = \'" + password + "\'";
+					ResultSet adminInfo = getAdmin.executeQuery(queryAdmin);
+					ResultSet customerInfo = getCustomer.executeQuery(queryCustomer);
+					
+					while(adminInfo.next()){
 						login = username;
 						isAdmin = true;
 						exitLoop = true;
 					}
-					else {
-						int c = getCustomer.executeUpdate();
-						if (c > 0) {
+					if(exitLoop == false){
+						while(customerInfo.next()) {
 							login = username;
 							exitLoop = true;
 						}
 					}
+					if(exitLoop == false){
+						System.out.println("Username does not exist or wrong password, please contact an administrator to create a new user");
+					}
+					
+					getAdmin.close();
+					getCustomer.close();
+					
 				}
 				catch (SQLException e) {
 					System.out.println("Error running queries. Machine Error: " + e.toString());
 				}
-				finally {
-					try {
-						if (getAdmin != null) getAdmin.close();
-						if (getCustomer != null) getCustomer.close();
-					}
-					catch (SQLException e) {
-						System.out.println("Cannot close statement. Machine error: " + e.toString());
-					}
-				}
+				// finally {
+				// 	try {
+				// 		if (getAdmin != null) getAdmin.close();
+				// 		if (getCustomer != null) getCustomer.close();
+				// 	}
+				// 	catch (SQLException e) {
+				// 		System.out.println("Cannot close statement. Machine error: " + e.toString());
+				// 	}
+				// }
 			}
 			else if (option == 2) {
 				this.timeToQuit = true;
