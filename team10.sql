@@ -172,7 +172,7 @@ begin
 	auc_id := newAuctionId+1;
 
 	insert into Product(auction_id,name,description,seller,start_date,min_price,number_of_days,status,amount)
-		values(newAuctionId+1,productName,productDescription,user,startdate,minPrice,numDays,'under auction',minPrice);
+		values(newAuctionId+1,productName,productDescription,user,startdate,minPrice,numDays,'underauction',minPrice);
 
 	commit;
 
