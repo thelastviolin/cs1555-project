@@ -104,6 +104,9 @@ public class Ebay {
 						System.out.println("Username does not exist or wrong password, please contact an administrator to create a new user");
 					}
 					
+					adminInfo.close();
+					getCustomer.close();
+					
 					getAdmin.close();
 					getCustomer.close();
 					
@@ -197,7 +200,10 @@ public class Ebay {
 				System.out.println("Your login name has been taken, please register with a new login name");
 			}
 			
-			statemen1.close();
+			currentCust.close();
+			currentAdmin.close();
+			
+			statement1.close();
 			statement2.close();
 			
 		}
@@ -238,6 +244,7 @@ public class Ebay {
 				
 			}
 			
+			result.close)();
 			statement.close();
 			
 		}
@@ -276,6 +283,8 @@ public class Ebay {
 						System.out.print("\thighest bidder: " + soldProductInfo.getString(1) + "\tamount: " + soldProductInfo.getInt(2));
 					}
 					System.out.println();
+					
+					soldProductInfo.close();
 					soldAuction.close();
 				}
 				
@@ -290,7 +299,8 @@ public class Ebay {
 				System.out.println("No records of any product statistics, you have no products yet!");
 			}
 			
-			notSold.close()
+			allProductInfo.close();
+			notSold.close();
 			
 		}
 		catch (SQLException e) {
@@ -324,6 +334,8 @@ public class Ebay {
 						System.out.print("\thighest bidder: " + soldProductInfo.getString(1) + "\tamount: " + soldProductInfo.getInt(2));
 					}
 					System.out.println();
+					
+					soldProductInfo.close();
 					soldAuction.close();
 				}
 				
@@ -338,6 +350,7 @@ public class Ebay {
 				System.out.println("The user you selected haven't put up anything in the auction yet or does not exist.");
 			}
 			
+			allProductInfo.close();
 			notSold.close();
 			
 		}
@@ -367,6 +380,7 @@ public class Ebay {
 				System.out.println("No products sold in the last " + months + " month(s) falls in subcategories only");
 			}
 			
+			allCatInfo.close();
 			allCat.close();
 			
 		}
@@ -396,6 +410,7 @@ public class Ebay {
 				System.out.println("No products sold in the last " + months + " month(s) falls in root categories only");
 			}
 			
+			allCatInfo.close();
 			allCat.close();
 			
 		}
@@ -425,6 +440,7 @@ public class Ebay {
 				System.out.println("No data in the last " + months + " month(s) on the most active bidder");
 			}
 			
+			bidderInfo.close();
 			topBidders.close();
 			
 		}
@@ -454,6 +470,7 @@ public class Ebay {
 				System.out.println("No data in the last " + months + " month(s) on the most active buyer");
 			}
 			
+			buyerInfo.close();
 			topBuyers.close();
 			
 		}
