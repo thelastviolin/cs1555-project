@@ -2,6 +2,7 @@ import java.util.Scanner;
 import java.sql.*;
 import java.text.ParseException;
 import oracle.jdbc.driver.OracleDriver;
+import java.util.ArrayList;
 
 public class Ebay {
 
@@ -346,6 +347,308 @@ public class Ebay {
 				System.out.println("Failed to display auctions. Machine error: " + e.toString());
 			}
 		}
+	}
+
+	public void makeNewAuction(String login) {
+		try {
+			Scanner scan = new Scanner(System.in);
+			String prodName, description, categoryInput;
+			int numDaysUp, minPrice;
+
+			// Gather user input
+			System.out.print("\nPlease enter a product name: ");
+			prodName = scan.next();
+			System.out.println("\nPlease enter a description for your product (optional): ");
+			description = scan.next();
+			System.out.println("\nPlease enter a category (or multiple categories separated by a space) for your product: ");
+			categoryInput = scan.next();
+			System.out.print("\nPlease enter the number of days you want your auction up: ");
+			numDaysUp = scan.nextInt();
+			System.out.print("\nPlease enter the minimum starting bid: ");
+			minPrice = scan.nextInt();
+			System.out.println("\n");
+
+			// Split up categories input
+			String[] categories = categoryInput.split(" ");
+
+			// Set up query and statement
+			String query;
+			PreparedStatement statement = null;
+			ResultSet rs;
+			int resultSetLength = 0;
+
+			// Check to see if given categories exist
+			query = "select count(*) from category where ";
+			for (int i = 0; i < categories.length; i++) {
+				if (i == categories.length-1) {
+					query += "name = ?";
+				}
+				else {
+					query += "name = ? and ";
+				}
+			}
+
+			statement = connection.prepareStatement(query);
+			for (int i = 0; i < categories.length; i++) {
+				statement.setString(i+1, categories[i]);
+			} 
+
+			rs = statement.executeQuery();
+			while (rs.next()) {
+				resultSetLength = rs.getInt("count");
+			}
+
+			boolean categoryNotLeaf = false;
+			// If the categories don't exist, print error and do nothing else, continue
+			if (resultSetLength != categories.length) {
+				System.out.println("One or more given categories does not exist!");
+			}
+			else {	
+				// Make sure categories are leaf nodes
+				for (int i = 0; i < categories.length; i++) {
+					query = "select count(*) from category where parent_category = ?";
+					statement = connection.prepareStatement(query);
+					statement.setString(1, categories[i]);
+					rs = statement.executeQuery();
+					while (rs.next()) {
+						if (rs.getInt("count") > 0) {
+							categoryNotLeaf = true;
+							break;
+						}
+					}
+				}
+			}
+
+			// Output message that says that the category isn't a leaf, else move on
+			if (categoryNotLeaf) {
+				System.out.println("One of the categories provided is not a leaf!");
+			}
+			else {
+
+				// Call procedure
+				CallableStatement putProduct = connection.prepareCall("{call Put_Product(?,?,?,?,?,?)}");
+				putProduct.setString(1, prodName);
+				putProduct.setString(2, description);
+				putProduct.setString(3, login);
+				putProduct.setInt(4, numDaysUp);
+				putProduct.setInt(5, minPrice);
+				putProduct.registerOutParameter(6, Types.INTEGER);
+				putProduct.executeQuery();
+
+				// Get back auction id
+				int auction_id = putProduct.getInt(6);
+
+				// Insert auction_id, category into BelongsTo
+				for (int i = 0; i < categories.length; i++) {
+					query = "insert into BelongsTo(auction_id,category) values(?,?)";
+					statement = connection.prepareStatement(query);
+					statement.setInt(1, auction_id);
+					statement.setString(2, categories[i]);
+					statement.executeUpdate();
+				}
+
+				// Close statements
+
+				putProduct.close();
+				statement.close();
+			}
+		}
+		catch (SQLException e) {
+			System.out.println("An error has occurred. Machine error: " + e.toString());
+		}
+	}
+
+
+	public void bidOnAuction(String login) {
+		try {
+			int auction_id, bidAmount, currentBid;
+			Scanner scan = new Scanner(System.in);
+			System.out.print("\nPlease enter the auction ID of the product you want to bid on: ");
+			auction_id = scan.nextInt();
+			System.out.print("\nPlease enter your bid: ");
+			bidAmount = scan.nextInt();
+
+			String query = "";
+			PreparedStatement statement = null;
+			ResultSet rs;
+
+			query = "select amount from Product where auction_id = ?";
+			statement = connection.prepareStatement(query);
+			statement.setInt(1, auction_id);
+			rs = statement.executeQuery();
+
+			// Find current highest bid
+			currentBid = 0;
+			while (rs.next()) {
+				currentBid = rs.getInt("amount");
+			}
+
+			boolean bidTooLow = false;
+
+			if (currentBid > bidAmount) {
+				bidTooLow = true;
+			}
+
+			if (bidTooLow) {
+				System.out.println("The bid you entered is not large enough.");
+			}
+			else {
+				// Get new bidsn
+				query = "select max(bidsn) from Bidlog";
+				int highestBidsn = 0;
+				statement = connection.prepareStatement(query);
+				rs = statement.executeQuery();
+				while (rs.next()) {
+					highestBidsn = rs.getInt("max");
+				}
+				highestBidsn += 1;
+
+				// Get current sysdate
+				Date currentSysDate = null;
+				query = "select c_date from ourSysDate";
+				statement = connection.prepareStatement(query);
+				rs = statement.executeQuery();
+				while (rs.next()) {
+					currentSysDate = rs.getDate("c_date");
+				}
+
+				// Add in new bid
+				query = "insert into Bidlog(bidsn, auction_id, bidder, bid_time, amount) values(?,?,?,?,?)";
+				statement = connection.prepareStatement(query);
+				statement.setInt(1, highestBidsn);
+				statement.setInt(2, auction_id);
+				statement.setString(3, login);
+				statement.setDate(4, currentSysDate);
+				statement.setInt(5, bidAmount);
+				statement.executeUpdate();
+			}
+
+			if (statement != null) statement.close();
+		}
+		catch (SQLException e) {
+			System.out.println("There was an error inserting your new bid. Machine error: " + e.toString());
+		}
+	}
+
+	public void sellAuctions(String login) {
+		try {
+			String query = "";
+			PreparedStatement statement = null;
+			ResultSet rs;
+
+			Scanner scan = new Scanner(System.in);
+
+			ArrayList<Integer> auction_ids = new ArrayList<Integer>();
+			ArrayList<String> names = new ArrayList<String>();
+			ArrayList<Integer> secondHighestBids = new ArrayList<Integer>();
+			ArrayList<String> bidders = new ArrayList<String>();
+
+			query = "select count(*) from Product where seller=? and status='under auction'";
+			statement = connection.prepareStatement(query);
+			statement.setString(1, login);
+
+			int numAuctions = 0;
+			rs = statement.executeQuery();
+			while (rs.next()) {
+				numAuctions = rs.getInt("count");
+			}
+
+			if (!(numAuctions > 0)) {
+				System.out.println("You currently have no auctions you can end!");
+			}
+			else {
+				// Populate array lists with auction_ids and names
+				query = "select auction_id, name from Product where seller=? and status='under auction'";
+				statement = connection.prepareStatement(query);
+				statement.setString(1, login);
+				rs = statement.executeQuery();
+				while (rs.next()) {
+					auction_ids.add(rs.getInt("auction_id"));
+					names.add(rs.getString("name"));
+				}
+
+				// Find second highest bid for all auctions
+				for (int i = 0; i < auction_ids.size(); i++) {
+					query = "select count(*) from Bidlog where auction_id=?";
+					statement = connection.prepareStatement(query);
+					statement.setInt(1, auction_ids.get(i));
+					rs = statement.executeQuery();
+					int numBids = 0;
+					while (rs.next()) {
+						numBids = rs.getInt("count");
+					}
+					if (numBids == 0) {
+						secondHighestBids.add(0);
+					}
+					else if (numBids == 1) {
+						query = "select amount, bidder from Bidlog where auction_id=?";
+						statement = connection.prepareStatement(query);
+						statement.setInt(1, auction_ids.get(i));
+						rs = statement.executeQuery();
+						while (rs.next()) {
+							secondHighestBids.add(rs.getInt("amount"));
+							bidders.add(rs.getString("bidder"));
+						}
+					}
+					else {
+						query = "select amount, bidder from Bidlog where auction_id=? and rownum < 2 order by amount desc";
+						statement = connection.prepareStatement(query);
+						statement.setInt(1, auction_ids.get(i));
+						rs = statement.executeQuery();
+						rs.last();
+						secondHighestBids.add(rs.getInt("amount"));
+						bidders.add(rs.getString("bidder"));
+					}
+				}
+			}
+
+			numAuctions = 1;
+			int auctionToClose = 0;
+			// Display auctions available for close to user
+			System.out.println("   Auction ID\tName\tAmount You Can Sell For");
+			for (int i = 0; i < auction_ids.size(); i++) {
+				System.out.println(numAuctions + ". " + auction_ids.get(i) + "\t" + names.get(i) + "\t" + secondHighestBids.get(i));
+				numAuctions++;
+			}
+			System.out.print("Please choose which auction you want to close (1-" + numAuctions + "): ");
+			auctionToClose = scan.nextInt();
+
+			if (auctionToClose >= auction_ids.size() || auctionToClose < 0) {
+				System.out.println("You failed to pick an auction correctly. Nice job.");
+			}
+			else {
+				System.out.println("\n1. Withdraw Auction (The product will not be sold and the auction will be marked as closed.)");
+				if (secondHighestBids.get(auctionToClose) != 0) {
+					System.out.println("2. Sell Auction (The product will be sold at the price listed above.)");
+				}
+				System.out.print("Please select an option or enter 0 to cancel: ");
+				int option = scan.nextInt();
+				if (option == 1) {
+					// Update product status to withdrawn
+					query = "update Product set status='withdrawn' where auction_id=?";
+					statement = connection.prepareStatement(query);
+					statement.setInt(1, auction_ids.get(auctionToClose));
+					statement.executeUpdate();
+					System.out.println("Auction successfully withdrawn.");
+				}
+				else if (option == 2 && secondHighestBids.get(auctionToClose) != 0) {
+					// Update product status to sold with buyer = bidder
+					query = "update Product set status='sold', buyer=? where auction_id=?";
+					statement = connection.prepareStatement(query);
+					statement.setString(1, bidders.get(auctionToClose));
+					statement.setInt(2, auction_ids.get(auctionToClose));
+					statement.executeUpdate();
+					System.out.println("Auction sold for " + secondHighestBids.get(auctionToClose) + " to " + bidders.get(auctionToClose) +".");
+				}
+			}
+		}
+		catch (SQLException e) {
+			System.out.println("There was an error withdrawing or selling your auction. Machine error: " + e.toString());
+		}
+	}
+
+	public void suggestAuctions(String login) {
+		
 	}
 
 
