@@ -426,7 +426,6 @@ public class Ebay {
 		try{
 			
 			Statement topBidders = connection.createStatement();
-			// String allCatQuery = "SELECT a.name, count(a.status = 'sold') as NumSold FROM (SELECT Category.name, Category.parent_category, BelongsTo.auction_id, Product.status FROM Category inner join BelongsTo on Category.name = BelongsTo.category inner join Product on BelongsTo.auction_id = Product.auction_id WHERE parent_category IS NOT NULL AND Product.status = 'sold' ORDER BY Category.name) a GROUP BY a.name";
 			String bidderQuery = "SELECT bidder, Bid_Count(bidder, " + months + ") FROM Bidlog WHERE rownum <= " + k + " GROUP BY bidder ORDER BY Bid_Count(bidder, " + months +") desc";
 			ResultSet bidderInfo = topBidders.executeQuery(bidderQuery);
 			boolean hasData = false;
@@ -456,7 +455,6 @@ public class Ebay {
 		try{
 			
 			Statement topBuyers = connection.createStatement();
-			// String allCatQuery = "SELECT a.name, count(a.status = 'sold') as NumSold FROM (SELECT Category.name, Category.parent_category, BelongsTo.auction_id, Product.status FROM Category inner join BelongsTo on Category.name = BelongsTo.category inner join Product on BelongsTo.auction_id = Product.auction_id WHERE parent_category IS NOT NULL AND Product.status = 'sold' ORDER BY Category.name) a GROUP BY a.name";
 			String buyerQuery = "SELECT buyer, Buying_Amount(buyer, " + months + ") FROM Product WHERE rownum <= " + k + " GROUP BY buyer ORDER BY Buying_Amount(buyer, " + months +") desc";
 			ResultSet buyerInfo = topBuyers.executeQuery(buyerQuery);
 			boolean hasData = false;
