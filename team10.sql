@@ -1,4 +1,4 @@
--- Kevin Ireland (kdi8), Zhiyao Wei (zhw28) first phase
+-- Kevin Ireland (kdi8), Zhiyao Wei (zhw28)
 
 CREATE TABLE ourSysDATE (
 	c_date date,
@@ -134,6 +134,10 @@ begin
 	return(total_amount);
 end;
 /
+
+insert into administrator values('admin', 'root', 'administrator', '6810 SENSQ', 'admin@1555.com');
+
+commit;
 
 -- top k most active bidders in x months, currently replaced k with 2 (if k = 1) and x with 1 (during the last 1 month)
 -- select bidder, Bid_Count(bidder, 0)
