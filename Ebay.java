@@ -31,6 +31,18 @@ public class Ebay {
 			String login = auctionHouse.handleLogin();
 			while (!auctionHouse.timeToQuit) {
 				
+				if(auctionHouse.adminLogin){
+					
+					
+					
+				}
+				
+				else{
+					
+					
+					
+				}
+				
 			}
 			System.out.println("\nGoodbye!");
 
@@ -179,10 +191,14 @@ public class Ebay {
 				insertNewUser.setString(5, email);
 				insertNewUser.executeUpdate();
 				System.out.println("New user has been added");
+				insertNewUser.close();
 			}
 			else{
 				System.out.println("Your login name has been taken, please register with a new login name");
 			}
+			
+			statemen1.close();
+			statement2.close();
 			
 		}
 		catch (SQLException e) {
@@ -217,9 +233,12 @@ public class Ebay {
 					PreparedStatement updateSDate = connection.prepareStatement(updateSysDateQuery);
 					updateSDate.setString(1, newDate);
 					updateSDate.executeUpdate();
+					updateSDate.close();
 				}
 				
 			}
+			
+			statement.close();
 			
 		}
 		catch (SQLException e) {
@@ -257,6 +276,7 @@ public class Ebay {
 						System.out.print("\thighest bidder: " + soldProductInfo.getString(1) + "\tamount: " + soldProductInfo.getInt(2));
 					}
 					System.out.println();
+					soldAuction.close();
 				}
 				
 				// if product is sold, display its buyer and the highest amount
@@ -269,6 +289,8 @@ public class Ebay {
 			if(recordExists == false){
 				System.out.println("No records of any product statistics, you have no products yet!");
 			}
+			
+			notSold.close()
 			
 		}
 		catch (SQLException e) {
@@ -302,6 +324,7 @@ public class Ebay {
 						System.out.print("\thighest bidder: " + soldProductInfo.getString(1) + "\tamount: " + soldProductInfo.getInt(2));
 					}
 					System.out.println();
+					soldAuction.close();
 				}
 				
 				// if product is sold, display its buyer and the highest amount
@@ -314,6 +337,8 @@ public class Ebay {
 			if(recordExists == false){
 				System.out.println("The user you selected haven't put up anything in the auction yet or does not exist.");
 			}
+			
+			notSold.close();
 			
 		}
 		catch (SQLException e) {
@@ -342,6 +367,8 @@ public class Ebay {
 				System.out.println("No products sold in the last " + months + " month(s) falls in subcategories only");
 			}
 			
+			allCat.close();
+			
 		}
 		catch (SQLException e) {
 			System.out.println("Error running queries. Machine Error: " + e.toString());
@@ -368,6 +395,8 @@ public class Ebay {
 			if(hasData == false){
 				System.out.println("No products sold in the last " + months + " month(s) falls in root categories only");
 			}
+			
+			allCat.close();
 			
 		}
 		catch (SQLException e) {
@@ -396,6 +425,8 @@ public class Ebay {
 				System.out.println("No data in the last " + months + " month(s) on the most active bidder");
 			}
 			
+			topBidders.close();
+			
 		}
 		catch (SQLException e) {
 			System.out.println("Error running queries. Machine Error: " + e.toString());
@@ -422,6 +453,8 @@ public class Ebay {
 			if(hasData == false){
 				System.out.println("No data in the last " + months + " month(s) on the most active buyer");
 			}
+			
+			topBuyers.close();
 			
 		}
 		catch (SQLException e) {
