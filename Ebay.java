@@ -201,12 +201,13 @@ public class Ebay {
 		while (!exitLoop) {
 			System.out.print("1. Login\n" + "2. Exit\n\n" + "Please select an option (1-2): ");
 			option = scan.nextInt();
+			scan.nextLine();
 			if (option == 1) {
 				String username, password;
 				System.out.print("\nUsername: ");
-				username = scan.next();
+				username = scan.nextLine();
 				System.out.print("Password: ");
-				password = scan.next();
+				password = scan.nextLine();
 
 				try {
 					
