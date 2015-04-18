@@ -197,6 +197,7 @@ public class Ebay {
 		Scanner scan = new Scanner(System.in);
 		isAdmin = false;
 		exitLoop = false;
+		int numberOfTries = 0;
 		System.out.print("Welcome to the Auction House!\n");
 		while (!exitLoop) {
 			System.out.print("1. Login\n" + "2. Exit\n\n" + "Please select an option (1-2): ");
@@ -232,7 +233,16 @@ public class Ebay {
 						}
 					}
 					if(exitLoop == false){
-						System.out.println("Username does not exist or wrong password, please contact an administrator to create a new user");
+						numberOfTries++;
+						
+						if(numberOfTries == 3){
+							System.out.println("Too many invalid attempts at login, program terminating");
+							exitLoop = true;
+							timeToQuit = true;
+						}
+						else{
+							System.out.println("Username does not exist or wrong password, please contact an administrator to create a new user");
+						}
 					}
 					
 					getAdmin.close();
