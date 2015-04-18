@@ -295,15 +295,15 @@ public class Team10 {
 				Statement getProducts = connection.createStatement();
 				String query = "select auction_id, name, amount, seller, status from Product";
 				ResultSet rs = getProducts.executeQuery(query);
-				System.out.printf("%-15s  %-12s  %-12s  %-12s  %-12s\n", "auction_id", "name", "current_bid", "seller", "status");
-				System.out.println("---------------------------------------------------------------\n");
+				System.out.printf("%-11s  %-20s  %-10s  %-20s  %-20s\n", "auction_id", "name", "current_bid", "seller", "status");
+				System.out.println("--------------------------------------------------------------------------------\n");
 				while (rs.next()) {
 					int auction_id = rs.getInt("auction_id");
 					String name = rs.getString("name");
 					int amount = rs.getInt("amount");
 					String seller = rs.getString("seller");
 					String status = rs.getString("status");
-					System.out.printf("%15d  %-12s  %12d  %-12s  %-12s\n", auction_id, name, amount, seller, status);
+					System.out.printf("%-11d  %-20s  %-10d  %-20s  %-20s\n", auction_id, name, amount, seller, status);
 				}
 				rs.close();
 
@@ -376,8 +376,8 @@ public class Team10 {
 					if (leaf) {
 						query = "select BelongsTo.auction_id, Product.name, BelongsTo.category, Product.amount, Product.seller, Product.status from BelongsTo inner join Product on BelongsTo.auction_id=Product.auction_id where BelongsTo.category=\'" + selectedCategory + "\'";
 						rs = statement.executeQuery(query);
-						System.out.printf("%-15s  %-12s  %-20s  %-12s  %-12s  %-12s\n", "auction_id", "name", "category", "current_bid", "seller", "status");
-						System.out.println("---------------------------------------------------------------\n");
+						System.out.printf("%-11s  %-20s  %-20s  %-10s  %-20s  %-20s\n", "auction_id", "name", "category", "current_bid", "seller", "status");
+				System.out.println("--------------------------------------------------------------------------------\n");
 						while (rs.next()) {
 							int auction_id = rs.getInt(1);
 							String name = rs.getString(2);
@@ -385,7 +385,7 @@ public class Team10 {
 							int amount = rs.getInt(4);
 							String seller = rs.getString(5);
 							String status = rs.getString(6);
-							System.out.printf("%15d  %-12s  %-20s  %12d  %-12s  %-12s\n", auction_id, name, cat, amount, seller, status);
+							System.out.printf("%-11d  %-20s  %-20s  %-10d  %-20s  %-20s\n", auction_id, name, cat, amount, seller, status);
 						}
 						rs.close();
 					}
@@ -430,15 +430,15 @@ public class Team10 {
 				Statement getProducts = connection.createStatement();
 				String query = "select auction_id, name, amount, seller, status from Product order by amount desc nulls last";
 				ResultSet rs = getProducts.executeQuery(query);
-				System.out.printf("%-15s  %-12s  %-12s  %-12s  %-12s\n", "auction_id", "name", "current_bid", "seller", "status");
-				System.out.println("---------------------------------------------------------------\n");
+				System.out.printf("%-11s  %-20s  %-10s  %-20s  %-20s\n", "auction_id", "name", "current_bid", "seller", "status");
+				System.out.println("--------------------------------------------------------------------------------\n");
 				while (rs.next()) {
 					int auction_id = rs.getInt("auction_id");
 					String name = rs.getString("name");
 					int amount = rs.getInt("amount");
 					String seller = rs.getString("seller");
 					String status = rs.getString("status");
-					System.out.printf("%15d  %-12s  %12d  %-12s  %-12s\n", auction_id, name, amount, seller, status);
+					System.out.printf("%-11d  %-20s  %-10d  %-20s  %-20s\n", auction_id, name, amount, seller, status);
 				}
 				rs.close();
 
@@ -475,8 +475,8 @@ public class Team10 {
 					}
 
 					rs = statement.executeQuery();
-					System.out.printf("%-15s  %-12s  %-12s  %-12s  %-12s  %-25s\n", "auction_id", "name", "current_bid", "seller", "status", "description");
-					System.out.println("---------------------------------------------------------------------------------------------\n");
+					System.out.printf("%-11s  %-20s  %-10s  %-20s  %-20s  %-30s\n", "auction_id", "name", "current_bid", "seller", "status", "description");
+				System.out.println("--------------------------------------------------------------------------------\n");
 					while (rs.next()) {
 						int auction_id = rs.getInt("auction_id");
 						String name = rs.getString("name");
@@ -484,7 +484,7 @@ public class Team10 {
 						String seller = rs.getString("seller");
 						String status = rs.getString("status");
 						String description = rs.getString("description");
-						System.out.printf("%15d  %-12s  %12d  %-12s  %-12s  %-25s\n", auction_id, name, amount, seller, status, description);
+						System.out.printf("%-11d  %-20s  %-10d  %-20s  %-20s  %-30s\n", auction_id, name, amount, seller, status, description);
 					}
 					rs.close();
 				}
@@ -873,8 +873,8 @@ public class Team10 {
 				System.out.println("There are no suggestions available at this time.");
 			}
 			else {
-				System.out.printf("%-15s  %-12s  %-12s  %-12s  %-12s\n", "auction_id", "name", "current_bid", "seller", "status");
-				System.out.println("---------------------------------------------------------------\n");
+				System.out.printf("%-11s  %-20s  %-10s  %-20s  %-30s\n", "auction_id", "name", "current_bid", "seller", "status");
+				System.out.println("--------------------------------------------------------------------------------\n");
 				for (int i = 0; i < auctions.size(); i++) {
 					query = "select auction_id, name, amount, seller, status from Product where auction_id = ?";
 					print = connection.prepareStatement(query);
@@ -886,7 +886,7 @@ public class Team10 {
 						int amount = rs.getInt("amount");
 						String seller = rs.getString("seller");
 						String status = rs.getString("status");
-						System.out.printf("%15d  %-12s  %12d  %-12s  %-12s\n", auction_id, name, amount, seller, status);
+						System.out.printf("%-11d  %-20s  %-10d  %-20s  %-20s\n", auction_id, name, amount, seller, status);
 					}
 					rs.close();
 				}
