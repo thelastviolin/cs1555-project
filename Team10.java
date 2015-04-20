@@ -1,3 +1,7 @@
+/*
+	Kevin Ireland (kdi8), Zhiyao Wei (zhw28)
+*/
+
 import java.util.Scanner;
 import java.sql.*;
 import java.text.ParseException;
@@ -42,8 +46,9 @@ public class Team10 {
 					System.out.println("6. Top-k Root Categories in Past n Months");
 					System.out.println("7. Top-k Bidders in Past n Months");
 					System.out.println("8. Top-k Buyers in Past n Months");
-					System.out.println("9. Exit");
-					System.out.print("Please choose an option (1-9): ");
+					System.out.println("9. Insert New Category");
+					System.out.println("0. Exit");
+					System.out.print("Please choose an option (0-9): ");
 					option = scan.nextInt();
 					scan.nextLine();
 					System.out.println();
@@ -133,6 +138,15 @@ public class Team10 {
 						System.out.println();
 					}
 					else if (option == 9) {
+						String cat, parentCat;
+						System.out.println("Please enter the category name: ");
+						cat = scan.nextLine();
+						System.out.println("Please enter the parent category, if it doesn't have one, enter none: ");
+						parentCat = scan.nextLine();
+						System.out.println();
+						auctionHouse.insertNewCategory(cat, parentCat);
+					}
+					else if (option == 0) {
 						auctionHouse.timeToQuit = true;
 					}
 				}
@@ -1234,6 +1248,46 @@ public class Team10 {
 			
 			buyerInfo.close();
 			topBuyers.close();
+			
+		}
+		catch (SQLException e) {
+			System.out.println("Error running queries. Machine Error: " + e.toString());
+		}
+		
+	}
+	
+	// insert new category
+	public void insertNewCategory(String cat, String parentCat){
+		
+		try{
+			
+			// make sure the new category we're trying to insert doesn't exist
+			boolean catExist = false;
+			String checkQuery = "SELECT name FROM Category WHERE name = ?";
+			PreparedStatement checkStatement = connection.prepareStatement(checkQuery);
+			checkStatement.setString(1, cat);
+			ResultSet result = checkStatement.executeQuery();
+			while(result.next()){
+				catExist = true;
+				System.out.println("The category you're trying to insert is in the database already");
+			}
+			checkStatement.close();
+			result.close();
+			
+			if(catExist == false){
+				String insertNewCat = "INSERT INTO Category (name, parent_category) values (?,?)";
+				PreparedStatement insert = connection.prepareStatement(insertNewCat);
+				insert.setString(1, cat);
+				if(!parentCat.equals("none")){
+					insert.setString(2, parentCat);
+				}
+				else{
+					insert.setString(2, null);
+				}
+				insert.executeUpdate();
+				
+				insert.close();
+			}
 			
 		}
 		catch (SQLException e) {
